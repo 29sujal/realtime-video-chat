@@ -1,5 +1,6 @@
 // public/script.js
-const socket = io(); // auto connects to same host
+const socket = io("https://realtime-video-chat-o9gq.onrender.com");
+; // auto connects to same host
 const joinBtn = document.getElementById("joinBtn");
 const createBtn = document.getElementById("createBtn");
 const roomInput = document.getElementById("roomInput");
