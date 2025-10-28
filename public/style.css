@@ -108,18 +108,21 @@ h1 { margin:0; font-size:20px }
   }
 }
 
-/* special case when exactly 2 videos: make them equal halves of screen */
+/* special case when exactly 2 videos: split horizontally like WhatsApp */
 .videos-grid.two {
-  display:flex;
-  gap:0;
-  height:calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: calc(100vh - 180px);
 }
-.videos-grid.two video{
-  width:50%;
-  height:100%;
-  object-fit:cover;
-  border-radius:0;
+
+.videos-grid.two video {
+  width: 100%;
+  height: 50%;
+  object-fit: cover;
+  border-radius: 0;
 }
+
 
 /* tile style for each video */
 .video-tile{
