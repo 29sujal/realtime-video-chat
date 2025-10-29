@@ -20,7 +20,7 @@ let muted = false;
 
 // -------------------- JOIN / CREATE ROOM --------------------
 createBtn.onclick = async () => {
-  const roomId = Math.floor(Math.random() * 100000).toString();
+  const roomId = Math.floor(Math.random() * 1000).toString();
   await startRoom(roomId);
 };
 
@@ -40,9 +40,8 @@ async function startRoom(roomId) {
 }
 
 copyLink.onclick = () => {
-  const roomURL = `${window.location.origin}?room=${currentRoom}`;
-  navigator.clipboard.writeText(roomURL);
-  alert("✅ Room link copied! Share it with anyone.");
+  navigator.clipboard.writeText(window.location.href + "?room=" + currentRoom);
+  alert("Room link copied!");
 };
 
 // -------------------- MEDIA SETUP --------------------
@@ -54,23 +53,23 @@ async function initMedia() {
     });
     addVideoTile("local", localStream, "You");
   } catch (err) {
-    alert("Camera/Microphone access denied.");
+    alert("Camera/Mic access denied.");
     console.error(err);
   }
 }
 
 function addVideoTile(id, stream, label = "") {
-  const videoWrapper = document.createElement("div");
+  let videoWrapper = document.createElement("div");
   videoWrapper.className = "video-tile";
   videoWrapper.id = `tile-${id}`;
 
-  const video = document.createElement("video");
+  let video = document.createElement("video");
   video.autoplay = true;
   video.playsInline = true;
   video.muted = id === "local";
   video.srcObject = stream;
 
-  const name = document.createElement("p");
+  let name = document.createElement("p");
   name.textContent = label;
   name.className = "username";
 
@@ -86,7 +85,7 @@ function attachStreamToTile(tile, stream) {
 
 // -------------------- SOCKET EVENTS --------------------
 socket.on("user-joined", userId => {
-  console.log("✅ User joined:", userId);
+  console.log("User joined:", userId);
   const peer = createPeer(userId, true);
   peers[userId] = { peer };
 });
@@ -101,7 +100,7 @@ socket.on("signal", async data => {
 });
 
 socket.on("user-left", id => {
-  console.log("❌ User left:", id);
+  console.log("User left:", id);
   const tile = document.getElementById(`tile-${id}`);
   if (tile) tile.remove();
   if (peers[id]) {
@@ -116,23 +115,6 @@ function createPeer(remoteId, initiator) {
     initiator,
     stream: localStream,
     trickle: false,
-    config: {
-      iceServers: [
-        // Free & Reliable Global STUN/TURN combo
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        {
-          urls: [
-            "stun:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:80",
-            "turn:openrelay.metered.ca:443",
-            "turn:openrelay.metered.ca:443?transport=tcp"
-          ],
-          username: "openrelayproject",
-          credential: "openrelayproject"
-        }
-      ]
-    }
   });
 
   peer.on("signal", data => {
@@ -140,26 +122,14 @@ function createPeer(remoteId, initiator) {
   });
 
   peer.on("stream", stream => {
-    console.log("🎥 Stream received from:", remoteId);
+    console.log("Stream received from:", remoteId);
     if (!document.getElementById(`tile-${remoteId}`)) {
       addVideoTile(remoteId, stream, "Friend");
     }
   });
 
-  peer.on("connect", () => {
-    console.log("🔗 Connected with peer:", remoteId);
-  });
-
-  peer.on("iceStateChange", state => {
-    console.log("🧊 ICE State:", remoteId, state);
-  });
-
-  peer.on("error", err => {
-    console.error("⚠️ Peer error:", remoteId, err);
-  });
-
   peer.on("close", () => {
-    console.log("🛑 Peer closed:", remoteId);
+    console.log("Peer closed:", remoteId);
     const tile = document.getElementById(`tile-${remoteId}`);
     if (tile) tile.remove();
   });
@@ -204,27 +174,21 @@ async function switchCamera(facingMode) {
     });
     const newVideoTrack = newStream.getVideoTracks()[0];
 
-    // Replace track locally
+    // Stop old video tracks
     localStream.getVideoTracks().forEach(track => track.stop());
+
+    // Update localStream and preview
     localStream.removeTrack(localStream.getVideoTracks()[0]);
     localStream.addTrack(newVideoTrack);
-
-    // Update local preview
     const localTile = document.getElementById("tile-local");
     attachStreamToTile(localTile, localStream);
 
-    // Replace track for peers
+    // Replace video tracks for all peers
     Object.values(peers).forEach(({ peer }) => {
       const sender = peer._pc
-        ?.getSenders()
+        .getSenders()
         .find(s => s.track && s.track.kind === "video");
-
-      if (sender) {
-        sender.replaceTrack(newVideoTrack);
-      } else {
-        peer.removeStream(localStream);
-        peer.addStream(localStream);
-      }
+      if (sender) sender.replaceTrack(newVideoTrack);
     });
   } catch (err) {
     console.error("Camera switch failed:", err);
@@ -238,7 +202,9 @@ muteBtn.onclick = () => {
   if (!localStream) return;
   muted = !muted;
   localStream.getAudioTracks().forEach(track => (track.enabled = !muted));
-  muteBtn.querySelector("span").textContent = muted ? "mic_off" : "mic";
+  muteBtn.innerHTML = muted
+    ? '<i class="fas fa-microphone-slash"></i>'
+    : '<i class="fas fa-microphone"></i>';
 };
 
 hangupBtn.onclick = () => {
@@ -248,3 +214,4 @@ hangupBtn.onclick = () => {
   socket.disconnect();
   location.reload();
 };
+
