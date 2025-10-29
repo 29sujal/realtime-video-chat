@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Video Chat</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://kit.fontawesome.com/a2e0e6c5b3.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+
+
 </head>
+
 <body>
   <div class="container">
     <header>
@@ -38,15 +44,22 @@
         <!-- WhatsApp-style bottom control bar -->
         <div class="bottom-bar">
           <button id="switchBtn" title="Switch Camera" class="control-btn">
-            <i class="fas fa-camera-rotate"></i>
+            <span class="material-symbols-outlined">
+              flip_camera_ios
+            </span>
           </button>
           <button id="muteBtn" title="Mute / Unmute" class="control-btn">
-            <i class="fas fa-microphone"></i>
+            <span class="material-symbols-outlined">
+              mic
+            </span>
           </button>
           <button id="hangupBtn" title="Hang Up" class="end-call">
-            <i class="fas fa-phone-slash"></i>
+            <span class="material-symbols-outlined">
+              call_end
+            </span>
           </button>
         </div>
+
       </section>
     </main>
   </div>
@@ -56,4 +69,5 @@
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

@@ -153,13 +153,13 @@ header {
 }
 
 .end-call {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: var(--end);
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
   display: flex;
@@ -171,6 +171,7 @@ header {
   transform: scale(1.1);
   background: #d32f2f;
 }
+
 
 /* Group calls layout */
 .videos-grid.group {
