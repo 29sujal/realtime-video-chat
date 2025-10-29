@@ -21,7 +21,9 @@ let usingFront = true;
 // Generate random room ID
 function genRoomId(len = 6) {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return Array.from({ length: len }, () =>
+    chars[Math.floor(Math.random() * chars.length)]
+  ).join("");
 }
 
 // Create room
@@ -64,7 +66,7 @@ copyLinkBtn.addEventListener("click", () => {
 muteBtn.addEventListener("click", () => {
   if (!localStream) return;
   isMuted = !isMuted;
-  localStream.getAudioTracks().forEach(t => (t.enabled = !isMuted));
+  localStream.getAudioTracks().forEach((t) => (t.enabled = !isMuted));
   muteBtn.innerHTML = isMuted
     ? '<i class="fas fa-microphone-slash"></i>'
     : '<i class="fas fa-microphone"></i>';
@@ -78,10 +80,10 @@ switchBtn.addEventListener("click", async () => {
 
 // Hang up
 hangupBtn.addEventListener("click", () => {
-  Object.values(peers).forEach(p => p.peer.destroy());
+  Object.values(peers).forEach((p) => p.peer.destroy());
   peers = {};
   videosDiv.innerHTML = "";
-  localStream?.getTracks().forEach(t => t.stop());
+  localStream?.getTracks().forEach((t) => t.stop());
   socket.emit("disconnect");
   videoScreen.classList.add("hidden");
   joinScreen.classList.remove("hidden");
@@ -89,15 +91,15 @@ hangupBtn.addEventListener("click", () => {
 });
 
 // SOCKET LISTENERS
-socket.on("user-joined", otherId => {
+socket.on("user-joined", (otherId) => {
   createPeer(otherId, true);
 });
-socket.on("signal", data => {
+socket.on("signal", (data) => {
   const { from, signal } = data;
   if (!peers[from]) createPeer(from, false, signal);
   else peers[from].peer.signal(signal);
 });
-socket.on("user-left", id => removePeer(id));
+socket.on("user-left", (id) => removePeer(id));
 
 // PEER CREATION
 function createPeer(remoteId, initiator, incomingSignal = null) {
@@ -112,8 +114,8 @@ function createPeer(remoteId, initiator, incomingSignal = null) {
 
   const tile = createVideoTile(`user-${remoteId}`, false);
 
-  peer.on("signal", signal => socket.emit("signal", { to: remoteId, signal }));
-  peer.on("stream", stream => {
+  peer.on("signal", (signal) => socket.emit("signal", { to: remoteId, signal }));
+  peer.on("stream", (stream) => {
     attachStreamToTile(tile, stream);
     adjustLayout();
   });
@@ -175,7 +177,7 @@ function adjustLayout() {
 
   if (count === 2) {
     videosDiv.classList.remove("group");
-    tiles.forEach(tile => {
+    tiles.forEach((tile) => {
       if (tile.classList.contains("local")) {
         tile.style.position = "absolute";
         tile.style.width = "30%";
@@ -190,7 +192,7 @@ function adjustLayout() {
     });
   } else {
     videosDiv.classList.add("group");
-    tiles.forEach(tile => {
+    tiles.forEach((tile) => {
       tile.style.position = "relative";
       tile.style.width = "100%";
       tile.style.height = "100%";
