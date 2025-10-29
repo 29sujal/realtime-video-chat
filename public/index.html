@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WhatsApp Style Video Chat</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://kit.fontawesome.com/a2e0e6c5b3.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="container">
@@ -36,9 +37,15 @@
 
         <!-- WhatsApp-style bottom control bar -->
         <div class="bottom-bar">
-          <button id="switchBtn" title="Switch Camera" class="control-btn">🔄</button>
-          <button id="muteBtn" title="Mute / Unmute" class="control-btn">🔈</button>
-          <button id="hangupBtn" title="Hang Up" class="end-call">❌</button>
+          <button id="switchBtn" title="Switch Camera" class="control-btn">
+            <i class="fas fa-camera-rotate"></i>
+          </button>
+          <button id="muteBtn" title="Mute / Unmute" class="control-btn">
+            <i class="fas fa-microphone"></i>
+          </button>
+          <button id="hangupBtn" title="Hang Up" class="end-call">
+            <i class="fas fa-phone-slash"></i>
+          </button>
         </div>
       </section>
     </main>

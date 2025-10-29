@@ -40,12 +40,7 @@ joinBtn.addEventListener("click", async () => {
 
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "user",
-        width: { ideal: 640 },
-        height: { ideal: 480 },
-        frameRate: { ideal: 24, max: 30 },
-      },
+      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       audio: { echoCancellation: true, noiseSuppression: true },
     });
   } catch (err) {
@@ -70,7 +65,9 @@ muteBtn.addEventListener("click", () => {
   if (!localStream) return;
   isMuted = !isMuted;
   localStream.getAudioTracks().forEach(t => (t.enabled = !isMuted));
-  muteBtn.innerText = isMuted ? "🔇" : "🔈";
+  muteBtn.innerHTML = isMuted
+    ? '<i class="fas fa-microphone-slash"></i>'
+    : '<i class="fas fa-microphone"></i>';
 });
 
 // Switch camera
@@ -91,7 +88,7 @@ hangupBtn.addEventListener("click", () => {
   roomInput.value = "";
 });
 
-// ============ SOCKET LISTENERS ============
+// SOCKET LISTENERS
 socket.on("user-joined", otherId => {
   createPeer(otherId, true);
 });
@@ -102,26 +99,18 @@ socket.on("signal", data => {
 });
 socket.on("user-left", id => removePeer(id));
 
-// ============ PEER CREATION ============
+// PEER CREATION
 function createPeer(remoteId, initiator, incomingSignal = null) {
   const peer = new SimplePeer({
     initiator,
     trickle: false,
     stream: localStream,
     config: {
-      iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        {
-          urls: "turn:relay1.expressturn.com:3478",
-          username: "efree",
-          credential: "free",
-        },
-      ],
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     },
   });
 
-  const isLocalView = Object.keys(peers).length === 0;
-  const tile = createVideoTile(`user-${remoteId}`, !isLocalView);
+  const tile = createVideoTile(`user-${remoteId}`, false);
 
   peer.on("signal", signal => socket.emit("signal", { to: remoteId, signal }));
   peer.on("stream", stream => {
@@ -136,7 +125,7 @@ function createPeer(remoteId, initiator, incomingSignal = null) {
   adjustLayout();
 }
 
-// ============ TILE FUNCTIONS ============
+// VIDEO TILE FUNCTIONS
 function createVideoTile(id, isLocal) {
   const div = document.createElement("div");
   div.className = `video-tile ${isLocal ? "local" : "remote"}`;
@@ -169,7 +158,7 @@ function addLocalVideoTile(stream) {
   adjustLayout();
 }
 
-// ============ REMOVE PEER ============
+// REMOVE PEER
 function removePeer(id) {
   const rec = peers[id];
   if (!rec) return;
@@ -179,14 +168,13 @@ function removePeer(id) {
   adjustLayout();
 }
 
-// ============ LAYOUT ============
+// LAYOUT ADJUSTMENT
 function adjustLayout() {
   const count = Object.keys(peers).length + (localStream ? 1 : 0);
   const tiles = videosDiv.querySelectorAll(".video-tile");
 
   if (count === 2) {
     videosDiv.classList.remove("group");
-
     tiles.forEach(tile => {
       if (tile.classList.contains("local")) {
         tile.style.position = "absolute";
@@ -210,7 +198,7 @@ function adjustLayout() {
   }
 }
 
-// ============ DOUBLE TAP SWAP ============
+// DOUBLE TAP SWAP
 function swapVideos() {
   const local = document.querySelector(".video-tile.local");
   const remote = document.querySelector(".video-tile.remote");
@@ -224,7 +212,7 @@ function swapVideos() {
   adjustLayout();
 }
 
-// ============ SWITCH CAMERA ============
+// SWITCH CAMERA
 async function switchCamera(facingMode) {
   if (!localStream) return;
   const newStream = await navigator.mediaDevices.getUserMedia({
@@ -239,11 +227,12 @@ async function switchCamera(facingMode) {
   attachStreamToTile(localTile, localStream);
 
   Object.values(peers).forEach(({ peer }) => {
-    if (peer.replaceTrack) peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newTrack, localStream);
+    if (peer.replaceTrack)
+      peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newTrack, localStream);
   });
 }
 
-// ============ PREFILL ROOM FROM URL ============
+// PREFILL ROOM FROM URL
 (function () {
   const params = new URLSearchParams(window.location.search);
   const r = params.get("room");
