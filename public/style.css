@@ -20,15 +20,13 @@ body {
 
 .container {
   width: 100%;
-  height: 100vh;
+  max-width: 1100px;
   position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 header {
   text-align: center;
-  margin: 10px 0;
+  margin-bottom: 12px;
 }
 
 .card {
@@ -68,11 +66,11 @@ header {
   font-size: 14px;
 }
 
-/* Video Layout */
+/* WhatsApp Style Video Layout */
 .videos-grid {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 220px);
   background: black;
   overflow: hidden;
   display: flex;
@@ -125,33 +123,28 @@ header {
 
 /* Bottom Control Bar */
 .bottom-bar {
-  position: fixed;
-  bottom: 30px;
-  left: 0;
+  position: absolute;
+  bottom: 25px;
   width: 100%;
   display: flex;
   justify-content: center;
-  gap: 25px;
-  z-index: 1000;
-}
-
-.control-btn,
-.end-call {
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  color: #fff;
-  border: none;
-  cursor: pointer;
+  gap: 20px;
+  z-index: 9999;
 }
 
 .control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   background: var(--accent);
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
   transition: transform 0.2s, background 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .control-btn:hover {
@@ -160,8 +153,18 @@ header {
 }
 
 .end-call {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
   background: var(--end);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
   transition: transform 0.2s, background 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .end-call:hover {
@@ -169,7 +172,7 @@ header {
   background: #d32f2f;
 }
 
-/* Group call grid */
+/* Group calls layout */
 .videos-grid.group {
   display: grid;
   gap: 8px;
