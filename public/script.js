@@ -85,7 +85,7 @@ function attachStreamToTile(tile, stream) {
 
 // -------------------- SOCKET EVENTS --------------------
 socket.on("user-joined", userId => {
-  console.log("User joined:", userId);
+  console.log("✅ User joined:", userId);
   const peer = createPeer(userId, true);
   peers[userId] = { peer };
 });
@@ -100,7 +100,7 @@ socket.on("signal", async data => {
 });
 
 socket.on("user-left", id => {
-  console.log("User left:", id);
+  console.log("❌ User left:", id);
   const tile = document.getElementById(`tile-${id}`);
   if (tile) tile.remove();
   if (peers[id]) {
@@ -115,6 +115,16 @@ function createPeer(remoteId, initiator) {
     initiator,
     stream: localStream,
     trickle: false,
+    config: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:relay1.expressturn.com:3478",
+          username: "efree",
+          credential: "efree"
+        }
+      ]
+    }
   });
 
   peer.on("signal", data => {
@@ -122,22 +132,28 @@ function createPeer(remoteId, initiator) {
   });
 
   peer.on("stream", stream => {
-    console.log("Stream received from:", remoteId);
+    console.log("🎥 Stream received from:", remoteId);
     if (!document.getElementById(`tile-${remoteId}`)) {
       addVideoTile(remoteId, stream, "Friend");
     }
   });
 
-  peer.on("close", () => {
-    console.log("Peer closed:", remoteId);
-    const tile = document.getElementById(`tile-${remoteId}`);
-    if (tile) tile.remove();
+  peer.on("iceStateChange", state => {
+    console.log("🧊 ICE state for", remoteId, ":", state);
   });
 
-  // --- handle renegotiation when camera is switched ---
-  peer.on("negotiationneeded", () => {
-    console.log("Renegotiation triggered for:", remoteId);
-    peer.signal(); // re-send negotiation data
+  peer.on("connect", () => {
+    console.log("🔗 Peer connected with:", remoteId);
+  });
+
+  peer.on("error", err => {
+    console.error("⚠️ Peer error:", remoteId, err);
+  });
+
+  peer.on("close", () => {
+    console.log("🛑 Peer closed:", remoteId);
+    const tile = document.getElementById(`tile-${remoteId}`);
+    if (tile) tile.remove();
   });
 
   return peer;
@@ -198,7 +214,6 @@ async function switchCamera(facingMode) {
       if (sender) {
         sender.replaceTrack(newVideoTrack);
       } else {
-        // fallback for mobile browsers
         peer.removeStream(localStream);
         peer.addStream(localStream);
       }
@@ -215,8 +230,6 @@ muteBtn.onclick = () => {
   if (!localStream) return;
   muted = !muted;
   localStream.getAudioTracks().forEach(track => (track.enabled = !muted));
-
-  // Update icon (works with Material Icons)
   muteBtn.querySelector("span").textContent = muted ? "mic_off" : "mic";
 };
 
