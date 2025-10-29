@@ -1,3 +1,4 @@
+// -------------------- SOCKET & ELEMENT SETUP --------------------
 const socket = io("https://realtime-video-chat-o9gq.onrender.com");
 const videosContainer = document.getElementById("videos");
 const joinScreen = document.getElementById("join-screen");
@@ -133,6 +134,12 @@ function createPeer(remoteId, initiator) {
     if (tile) tile.remove();
   });
 
+  // --- handle renegotiation when camera is switched ---
+  peer.on("negotiationneeded", () => {
+    console.log("Renegotiation triggered for:", remoteId);
+    peer.signal(); // re-send negotiation data
+  });
+
   return peer;
 }
 
@@ -173,21 +180,28 @@ async function switchCamera(facingMode) {
     });
     const newVideoTrack = newStream.getVideoTracks()[0];
 
-    // Stop old video tracks
+    // Stop old track and replace locally
     localStream.getVideoTracks().forEach(track => track.stop());
-
-    // Update localStream and preview
     localStream.removeTrack(localStream.getVideoTracks()[0]);
     localStream.addTrack(newVideoTrack);
+
+    // Update local preview
     const localTile = document.getElementById("tile-local");
     attachStreamToTile(localTile, localStream);
 
-    // Replace video tracks for all peers
+    // Update track for each peer (auto-renegotiate if needed)
     Object.values(peers).forEach(({ peer }) => {
       const sender = peer._pc
-        .getSenders()
+        ?.getSenders()
         .find(s => s.track && s.track.kind === "video");
-      if (sender) sender.replaceTrack(newVideoTrack);
+
+      if (sender) {
+        sender.replaceTrack(newVideoTrack);
+      } else {
+        // fallback for mobile browsers
+        peer.removeStream(localStream);
+        peer.addStream(localStream);
+      }
     });
   } catch (err) {
     console.error("Camera switch failed:", err);
@@ -201,9 +215,9 @@ muteBtn.onclick = () => {
   if (!localStream) return;
   muted = !muted;
   localStream.getAudioTracks().forEach(track => (track.enabled = !muted));
-  muteBtn.innerHTML = muted
-    ? '<i class="fas fa-microphone-slash"></i>'
-    : '<i class="fas fa-microphone"></i>';
+
+  // Update icon (works with Material Icons)
+  muteBtn.querySelector("span").textContent = muted ? "mic_off" : "mic";
 };
 
 hangupBtn.onclick = () => {
@@ -213,4 +227,3 @@ hangupBtn.onclick = () => {
   socket.disconnect();
   location.reload();
 };
-
