@@ -20,7 +20,7 @@ let muted = false;
 
 // -------------------- JOIN / CREATE ROOM --------------------
 createBtn.onclick = async () => {
-  const roomId = Math.floor(Math.random() * 1000).toString();
+  const roomId = Math.floor(Math.random() * 100000).toString();
   await startRoom(roomId);
 };
 
@@ -40,8 +40,9 @@ async function startRoom(roomId) {
 }
 
 copyLink.onclick = () => {
-  navigator.clipboard.writeText(window.location.href + "?room=" + currentRoom);
-  alert("Room link copied!");
+  const roomURL = `${window.location.origin}?room=${currentRoom}`;
+  navigator.clipboard.writeText(roomURL);
+  alert("✅ Room link copied! Share it with anyone.");
 };
 
 // -------------------- MEDIA SETUP --------------------
@@ -53,23 +54,23 @@ async function initMedia() {
     });
     addVideoTile("local", localStream, "You");
   } catch (err) {
-    alert("Camera/Mic access denied.");
+    alert("Camera/Microphone access denied.");
     console.error(err);
   }
 }
 
 function addVideoTile(id, stream, label = "") {
-  let videoWrapper = document.createElement("div");
+  const videoWrapper = document.createElement("div");
   videoWrapper.className = "video-tile";
   videoWrapper.id = `tile-${id}`;
 
-  let video = document.createElement("video");
+  const video = document.createElement("video");
   video.autoplay = true;
   video.playsInline = true;
   video.muted = id === "local";
   video.srcObject = stream;
 
-  let name = document.createElement("p");
+  const name = document.createElement("p");
   name.textContent = label;
   name.className = "username";
 
@@ -117,11 +118,18 @@ function createPeer(remoteId, initiator) {
     trickle: false,
     config: {
       iceServers: [
+        // Free & Reliable Global STUN/TURN combo
         { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
         {
-          urls: "turn:relay1.expressturn.com:3478",
-          username: "efree",
-          credential: "efree"
+          urls: [
+            "stun:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp"
+          ],
+          username: "openrelayproject",
+          credential: "openrelayproject"
         }
       ]
     }
@@ -138,12 +146,12 @@ function createPeer(remoteId, initiator) {
     }
   });
 
-  peer.on("iceStateChange", state => {
-    console.log("🧊 ICE state for", remoteId, ":", state);
+  peer.on("connect", () => {
+    console.log("🔗 Connected with peer:", remoteId);
   });
 
-  peer.on("connect", () => {
-    console.log("🔗 Peer connected with:", remoteId);
+  peer.on("iceStateChange", state => {
+    console.log("🧊 ICE State:", remoteId, state);
   });
 
   peer.on("error", err => {
@@ -196,7 +204,7 @@ async function switchCamera(facingMode) {
     });
     const newVideoTrack = newStream.getVideoTracks()[0];
 
-    // Stop old track and replace locally
+    // Replace track locally
     localStream.getVideoTracks().forEach(track => track.stop());
     localStream.removeTrack(localStream.getVideoTracks()[0]);
     localStream.addTrack(newVideoTrack);
@@ -205,7 +213,7 @@ async function switchCamera(facingMode) {
     const localTile = document.getElementById("tile-local");
     attachStreamToTile(localTile, localStream);
 
-    // Update track for each peer (auto-renegotiate if needed)
+    // Replace track for peers
     Object.values(peers).forEach(({ peer }) => {
       const sender = peer._pc
         ?.getSenders()
