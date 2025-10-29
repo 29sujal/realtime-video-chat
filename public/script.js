@@ -109,12 +109,30 @@ socket.on("user-left", id => {
   }
 });
 
-// -------------------- PEER CONNECTION --------------------
+// -------------------- PEER CONNECTION (GLOBAL ENABLED) --------------------
 function createPeer(remoteId, initiator) {
   const peer = new SimplePeer({
     initiator,
     stream: localStream,
     trickle: false,
+    config: {
+      iceServers: [
+        // ✅ Free Google STUN server (helps global connection)
+        { urls: "stun:stun.l.google.com:19302" },
+
+        // ✅ Free TURN + STUN servers from OpenRelay (backup relay)
+        {
+          urls: [
+            "stun:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:80",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:443?transport=tcp",
+          ],
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
+    },
   });
 
   peer.on("signal", data => {
@@ -127,6 +145,13 @@ function createPeer(remoteId, initiator) {
       addVideoTile(remoteId, stream, "Friend");
     }
   });
+
+  peer.on("iceConnectionStateChange", () => {
+    const state = peer._pc.iceConnectionState;
+    console.log(`ICE state (${remoteId}):`, state);
+  });
+
+  peer.on("error", err => console.error("Peer error:", err));
 
   peer.on("close", () => {
     console.log("Peer closed:", remoteId);
@@ -214,4 +239,3 @@ hangupBtn.onclick = () => {
   socket.disconnect();
   location.reload();
 };
-
