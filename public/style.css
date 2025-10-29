@@ -1,24 +1,20 @@
 :root {
   --bg: #0b1020;
   --card: #0f1724;
-  --accent: #2563eb;
+  --accent: #25d366; /* WhatsApp green */
+  --end: #f44336;
   --muted: #94a3b8;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: Inter, system-ui, Arial;
-  background: linear-gradient(180deg, var(--bg), #06101a);
+  font-family: "Inter", system-ui;
+  background: var(--bg);
   color: #e6eef8;
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  min-height: 100vh;
 }
 
 .container {
@@ -31,84 +27,44 @@ header {
   margin-bottom: 12px;
 }
 
-h1 {
-  margin: 0;
-  font-size: 20px;
-}
-
 .card {
-  background: linear-gradient(180deg, var(--card), #071021);
+  background: var(--card);
   padding: 16px;
   border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(2, 6, 23, 0.6);
-}
-
-#join-screen {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-}
-
-#join-screen input {
-  width: 100%;
-  max-width: 520px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: transparent;
-  color: inherit;
-}
-
-.controls-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.controls-row button,
-.call-controls button,
-#copyLink {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 0;
-  background: var(--accent);
-  color: white;
-  cursor: pointer;
-}
-
-.hint {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 6px;
-}
-
-.room-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.call-controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.call-controls button {
-  background: rgba(255, 255, 255, 0.04);
-  padding: 10px;
-  border-radius: 999px;
+  text-align: center;
 }
 
 .hidden {
   display: none;
 }
 
-/* ======================================================
-   WHATSAPP-STYLE LAYOUT FOR 2 USERS (REMOTE BIG + LOCAL SMALL)
-====================================================== */
+#join-screen input {
+  width: 80%;
+  max-width: 500px;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #111;
+  color: white;
+}
+
+.controls-row button,
+#copyLink {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* WhatsApp Style Video Layout */
 .videos-grid {
   position: relative;
   width: 100%;
@@ -120,115 +76,95 @@ h1 {
   justify-content: center;
 }
 
-/* Remote user = main big video */
+.video-tile {
+  transition: all 0.4s ease;
+}
+
 .video-tile.remote {
   position: relative;
   width: 100%;
   height: 100%;
+  z-index: 1;
 }
 
-/* Local user = small floating window bottom-right */
 .video-tile.local {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 35%;
+  bottom: 16px;
+  right: 16px;
+  width: 30%;
   height: 25%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+  z-index: 10;
 }
 
-/* Videos themselves */
 .video-tile video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: inherit;
 }
 
-/* Labels */
 .label {
   position: absolute;
-  left: 8px;
   bottom: 8px;
-  background: rgba(0, 0, 0, 0.45);
+  left: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 13px;
   padding: 4px 8px;
   border-radius: 6px;
-  font-size: 13px;
-  color: #fff;
 }
 
-/* Floating video responsive behavior */
-@media (max-width: 768px) {
-  .video-tile.local {
-    width: 40%;
-    height: 30%;
-    bottom: 10px;
-    right: 10px;
-  }
+/* WhatsApp-style Bottom Control Bar */
+.bottom-bar {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 25px;
 }
 
-/* ======================================================
-   GROUP CALLS (MORE THAN 2 PARTICIPANTS)
-====================================================== */
+.control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.control-btn:hover {
+  transform: scale(1.1);
+}
+
+.end-call {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--end);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.end-call:hover {
+  transform: scale(1.1);
+}
+
+/* Group calls layout */
 .videos-grid.group {
   display: grid;
   gap: 8px;
-  width: 100%;
-  height: calc(100vh - 240px);
-}
-
-.videos-grid.group .video-tile {
-  position: relative;
-  background: #071226;
-  border-radius: 10px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.videos-grid.group video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* Responsive group grid layout */
-@media (min-width: 900px) {
-  .videos-grid.group {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    grid-auto-rows: minmax(200px, 1fr);
-  }
-}
-
-@media (max-width: 899px) {
-  .videos-grid.group {
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: minmax(180px, 1fr);
-  }
-}
-
-/* Tile controls (fullscreen, mute etc.) */
-.tile-controls {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  display: flex;
-  gap: 8px;
-}
-
-.tile-controls button {
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 0;
-  background: rgba(0, 0, 0, 0.5);
-  color: #fff;
-  cursor: pointer;
-  font-size: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-auto-rows: minmax(200px, 1fr);
 }

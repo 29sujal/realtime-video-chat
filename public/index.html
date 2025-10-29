@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Chat</title>
+  <title>WhatsApp Style Video Chat</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,6 +13,7 @@
     </header>
 
     <main>
+      <!-- Join screen -->
       <section id="join-screen" class="card">
         <input type="text" id="roomInput" placeholder="Enter Room ID (or leave blank to create)" />
         <div class="controls-row">
@@ -22,24 +23,28 @@
         <p class="hint">Share the room ID with others to join.</p>
       </section>
 
+      <!-- Video screen -->
       <section id="video-screen" class="hidden">
         <div class="room-top">
           <div>
             <h2 id="roomDisplay">Room:</h2>
             <button id="copyLink">Copy Room Link</button>
           </div>
-          <div class="call-controls">
-            <button id="muteBtn" title="Mute / Unmute">🔈</button>
-            <button id="switchBtn" title="Switch Camera">🔄</button>
-            <button id="hangupBtn" title="Hang Up">❌</button>
-          </div>
         </div>
 
         <div id="videos" class="videos-grid"></div>
+
+        <!-- WhatsApp-style bottom control bar -->
+        <div class="bottom-bar">
+          <button id="switchBtn" title="Switch Camera" class="control-btn">🔄</button>
+          <button id="muteBtn" title="Mute / Unmute" class="control-btn">🔈</button>
+          <button id="hangupBtn" title="Hang Up" class="end-call">❌</button>
+        </div>
       </section>
     </main>
   </div>
 
+  <!-- Dependencies -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer@9.11.1/simplepeer.min.js"></script>
   <script src="script.js"></script>

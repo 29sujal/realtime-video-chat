@@ -1,5 +1,5 @@
-// public/script.js
 const socket = io("https://realtime-video-chat-o9gq.onrender.com");
+
 const joinBtn = document.getElementById("joinBtn");
 const createBtn = document.getElementById("createBtn");
 const roomInput = document.getElementById("roomInput");
@@ -14,30 +14,25 @@ const copyLinkBtn = document.getElementById("copyLink");
 
 let roomId = null;
 let localStream = null;
-let peers = {}; // { peerId: { peer, el(video element) } }
+let peers = {};
 let isMuted = false;
-let usingFront = true; // front camera initially (facingMode: 'user')
+let usingFront = true;
 
-// Utility: generate short room ID
+// Generate random room ID
 function genRoomId(len = 6) {
-  const s = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let r = "";
-  for (let i = 0; i < len; i++) r += s[Math.floor(Math.random() * s.length)];
-  return r;
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
 }
 
 // Create room
 createBtn.addEventListener("click", () => {
-  roomInput.value = genRoomId(6);
+  roomInput.value = genRoomId();
 });
 
 // Join room
 joinBtn.addEventListener("click", async () => {
-  roomId = (roomInput.value || "").trim();
-  if (!roomId) {
-    alert("Please enter or create a room ID");
-    return;
-  }
+  roomId = roomInput.value.trim();
+  if (!roomId) return alert("Please enter or create a room ID");
 
   joinScreen.classList.add("hidden");
   videoScreen.classList.remove("hidden");
@@ -45,11 +40,16 @@ joinBtn.addEventListener("click", async () => {
 
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: true,
+      video: {
+        facingMode: "user",
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 24, max: 30 },
+      },
+      audio: { echoCancellation: true, noiseSuppression: true },
     });
   } catch (err) {
-    alert("Camera/Microphone access required: " + err.message);
+    alert("Camera/Mic access denied: " + err.message);
     return;
   }
 
@@ -57,181 +57,163 @@ joinBtn.addEventListener("click", async () => {
   socket.emit("join-room", roomId);
 });
 
-// Copy link
-copyLinkBtn?.addEventListener("click", () => {
+// Copy room link
+copyLinkBtn.addEventListener("click", () => {
   const url = `${location.origin}${location.pathname}?room=${roomId}`;
-  navigator.clipboard.writeText(url).then(() => {
-    copyLinkBtn.innerText = "Copied!";
-    setTimeout(() => (copyLinkBtn.innerText = "Copy Room Link"), 1200);
-  });
+  navigator.clipboard.writeText(url);
+  copyLinkBtn.innerText = "Copied!";
+  setTimeout(() => (copyLinkBtn.innerText = "Copy Room Link"), 1200);
 });
 
 // Mute/unmute
-muteBtn?.addEventListener("click", () => {
+muteBtn.addEventListener("click", () => {
   if (!localStream) return;
   isMuted = !isMuted;
-  localStream.getAudioTracks().forEach((t) => (t.enabled = !isMuted));
+  localStream.getAudioTracks().forEach(t => (t.enabled = !isMuted));
   muteBtn.innerText = isMuted ? "🔇" : "🔈";
 });
 
 // Switch camera
-switchBtn?.addEventListener("click", async () => {
+switchBtn.addEventListener("click", async () => {
   usingFront = !usingFront;
   await switchCamera(usingFront ? "user" : "environment");
 });
 
 // Hang up
-hangupBtn?.addEventListener("click", () => {
-  Object.values(peers).forEach((p) => p.peer.destroy());
+hangupBtn.addEventListener("click", () => {
+  Object.values(peers).forEach(p => p.peer.destroy());
   peers = {};
   videosDiv.innerHTML = "";
-  if (localStream) {
-    localStream.getTracks().forEach((t) => t.stop());
-    localStream = null;
-  }
+  localStream?.getTracks().forEach(t => t.stop());
   socket.emit("disconnect");
   videoScreen.classList.add("hidden");
   joinScreen.classList.remove("hidden");
   roomInput.value = "";
 });
 
-// Socket listeners
-socket.on("user-joined", (otherId) => {
-  console.log("user-joined", otherId);
+// ============ SOCKET LISTENERS ============
+socket.on("user-joined", otherId => {
   createPeer(otherId, true);
 });
-
-socket.on("signal", (data) => {
+socket.on("signal", data => {
   const { from, signal } = data;
-  if (!peers[from]) {
-    createPeer(from, false, signal);
-  } else {
-    peers[from].peer.signal(signal);
-  }
+  if (!peers[from]) createPeer(from, false, signal);
+  else peers[from].peer.signal(signal);
 });
+socket.on("user-left", id => removePeer(id));
 
-socket.on("user-left", (id) => {
-  removePeer(id);
-});
-
-// ==================== PEER CREATION ====================
+// ============ PEER CREATION ============
 function createPeer(remoteId, initiator, incomingSignal = null) {
-  if (!localStream) {
-    console.warn("no local stream yet");
-    return;
-  }
-
   const peer = new SimplePeer({
     initiator,
     trickle: false,
     stream: localStream,
+    config: {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:relay1.expressturn.com:3478",
+          username: "efree",
+          credential: "free",
+        },
+      ],
+    },
   });
 
-  const tile = createVideoTile(`user-${remoteId}`, false);
+  const isLocalView = Object.keys(peers).length === 0;
+  const tile = createVideoTile(`user-${remoteId}`, !isLocalView);
 
-  peer.on("signal", (signal) => {
-    socket.emit("signal", { to: remoteId, signal });
-  });
-
-  peer.on("stream", (stream) => {
+  peer.on("signal", signal => socket.emit("signal", { to: remoteId, signal }));
+  peer.on("stream", stream => {
     attachStreamToTile(tile, stream);
     adjustLayout();
   });
-
   peer.on("close", () => removePeer(remoteId));
-  peer.on("error", (e) => {
-    console.warn("peer error", e);
-    removePeer(remoteId);
-  });
+  peer.on("error", () => removePeer(remoteId));
 
   peers[remoteId] = { peer, el: tile };
   if (!initiator && incomingSignal) peer.signal(incomingSignal);
   adjustLayout();
-  return peer;
 }
 
-// Remove peer
-function removePeer(id) {
-  const rec = peers[id];
-  if (!rec) return;
-  try {
-    rec.peer.destroy();
-  } catch (e) {}
-  if (rec.el && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
-  delete peers[id];
-  adjustLayout();
-}
-
-// ==================== CREATE VIDEO TILE ====================
+// ============ TILE FUNCTIONS ============
 function createVideoTile(id, isLocal) {
-  const wrapper = document.createElement("div");
-  wrapper.className = `video-tile ${isLocal ? "local" : "remote"}`;
-  wrapper.id = id;
+  const div = document.createElement("div");
+  div.className = `video-tile ${isLocal ? "local" : "remote"}`;
+  div.id = id;
 
-  const vid = document.createElement("video");
-  vid.autoplay = true;
-  vid.playsInline = true;
-  vid.muted = isLocal ? true : false;
-  wrapper.appendChild(vid);
+  const video = document.createElement("video");
+  video.autoplay = true;
+  video.playsInline = true;
+  video.muted = isLocal;
+  div.appendChild(video);
 
-  const lbl = document.createElement("div");
-  lbl.className = "label";
-  lbl.innerText = isLocal ? "You" : "Remote";
-  wrapper.appendChild(lbl);
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerText = isLocal ? "You" : "Remote";
+  div.appendChild(label);
 
-  // Double-click to swap (WhatsApp style)
-  wrapper.addEventListener("dblclick", swapVideos);
-
-  videosDiv.appendChild(wrapper);
-  return wrapper;
+  div.addEventListener("dblclick", swapVideos);
+  videosDiv.appendChild(div);
+  return div;
 }
 
-// ==================== ATTACH STREAM ====================
 function attachStreamToTile(tile, stream) {
-  const video = tile.querySelector("video");
-  video.srcObject = stream;
-  video.addEventListener("loadedmetadata", () =>
-    video.play().catch(() => {})
-  );
+  const vid = tile.querySelector("video");
+  vid.srcObject = stream;
 }
 
-// ==================== ADD LOCAL VIDEO ====================
 function addLocalVideoTile(stream) {
   const tile = createVideoTile("local", true);
   attachStreamToTile(tile, stream);
   adjustLayout();
 }
 
-// ==================== LAYOUT MANAGEMENT ====================
+// ============ REMOVE PEER ============
+function removePeer(id) {
+  const rec = peers[id];
+  if (!rec) return;
+  rec.peer.destroy();
+  rec.el.remove();
+  delete peers[id];
+  adjustLayout();
+}
+
+// ============ LAYOUT ============
 function adjustLayout() {
   const count = Object.keys(peers).length + (localStream ? 1 : 0);
+  const tiles = videosDiv.querySelectorAll(".video-tile");
 
   if (count === 2) {
-    videosDiv.className = "videos-grid";
-    const tiles = videosDiv.querySelectorAll(".video-tile");
-    tiles.forEach((t) => {
-      if (t.id === "local") {
-        t.className = "video-tile local";
+    videosDiv.classList.remove("group");
+
+    tiles.forEach(tile => {
+      if (tile.classList.contains("local")) {
+        tile.style.position = "absolute";
+        tile.style.width = "30%";
+        tile.style.height = "25%";
+        tile.style.bottom = "16px";
+        tile.style.right = "16px";
       } else {
-        t.className = "video-tile remote";
+        tile.style.position = "relative";
+        tile.style.width = "100%";
+        tile.style.height = "100%";
       }
     });
   } else {
-    // Group calls layout
-    videosDiv.className = "videos-grid group";
-    const tiles = videosDiv.querySelectorAll(".video-tile");
-    tiles.forEach((t) => {
-      t.className = "video-tile";
-      t.style.position = "relative";
+    videosDiv.classList.add("group");
+    tiles.forEach(tile => {
+      tile.style.position = "relative";
+      tile.style.width = "100%";
+      tile.style.height = "100%";
     });
   }
 }
 
-// ==================== DOUBLE-TAP SWAP LOGIC ====================
+// ============ DOUBLE TAP SWAP ============
 function swapVideos() {
   const local = document.querySelector(".video-tile.local");
   const remote = document.querySelector(".video-tile.remote");
-
   if (!local || !remote) return;
 
   local.classList.toggle("local");
@@ -242,63 +224,28 @@ function swapVideos() {
   adjustLayout();
 }
 
-// ==================== FULLSCREEN HELPER ====================
-function requestFullScreen(el) {
-  if (el.requestFullscreen) el.requestFullscreen();
-  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  else if (el.msRequestFullscreen) el.msRequestFullscreen();
-}
-
-// ==================== SWITCH CAMERA ====================
+// ============ SWITCH CAMERA ============
 async function switchCamera(facingMode) {
   if (!localStream) return;
-  const videoTrack = localStream.getVideoTracks()[0];
-  try {
-    const newStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode },
-      audio: true,
-    });
-    const newTrack = newStream.getVideoTracks()[0];
+  const newStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode },
+    audio: true,
+  });
+  const newTrack = newStream.getVideoTracks()[0];
+  const audioTrack = localStream.getAudioTracks()[0];
+  localStream = new MediaStream([newTrack, audioTrack]);
 
-    localStream.getTracks().forEach((t) => {
-      if (t.kind === "video") t.stop();
-    });
+  const localTile = document.getElementById("local");
+  attachStreamToTile(localTile, localStream);
 
-    const audioTrack =
-      newStream.getAudioTracks()[0] || localStream.getAudioTracks()[0];
-    localStream = new MediaStream([newTrack, audioTrack]);
-
-    const localTile = document.getElementById("local");
-    if (localTile) attachStreamToTile(localTile, localStream);
-
-    Object.values(peers).forEach(({ peer }) => {
-      if (typeof peer.replaceTrack === "function") {
-        try {
-          peer.replaceTrack(videoTrack, newTrack, localStream);
-        } catch (e) {
-          console.warn("replaceTrack failed", e);
-        }
-      } else {
-        try {
-          peer.destroy();
-        } catch (e) {}
-      }
-    });
-
-    socket.emit("join-room", roomId);
-  } catch (err) {
-    console.error("switchCamera error", err);
-    alert("Cannot switch camera: " + err.message);
-  }
+  Object.values(peers).forEach(({ peer }) => {
+    if (peer.replaceTrack) peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newTrack, localStream);
+  });
 }
 
-// ==================== ON LOAD ====================
-(function prefillFromUrl() {
+// ============ PREFILL ROOM FROM URL ============
+(function () {
   const params = new URLSearchParams(window.location.search);
   const r = params.get("room");
   if (r) roomInput.value = r;
 })();
-
-window.addEventListener("beforeunload", () => {
-  if (localStream) localStream.getTracks().forEach((t) => t.stop());
-});
