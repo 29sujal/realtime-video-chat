@@ -224,24 +224,50 @@ function swapVideos() {
   adjustLayout();
 }
 
-// ============ SWITCH CAMERA ============
+// ============ SWITCH CAMERA (FIXED & REALTIME UPDATE) ============
 async function switchCamera(facingMode) {
   if (!localStream) return;
-  const newStream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode },
-    audio: true,
-  });
-  const newTrack = newStream.getVideoTracks()[0];
-  const audioTrack = localStream.getAudioTracks()[0];
-  localStream = new MediaStream([newTrack, audioTrack]);
 
-  const localTile = document.getElementById("local");
-  attachStreamToTile(localTile, localStream);
+  try {
+    // Get new stream from selected camera
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode,
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        frameRate: { ideal: 24, max: 30 },
+      },
+      audio: false, // keep old audio track to avoid echo
+    });
 
-  Object.values(peers).forEach(({ peer }) => {
-    if (peer.replaceTrack) peer.replaceTrack(peer.streams[0].getVideoTracks()[0], newTrack, localStream);
-  });
+    const newVideoTrack = newStream.getVideoTracks()[0];
+
+    // Replace local video element with new stream
+    const localTile = document.getElementById("local");
+    const videoEl = localTile.querySelector("video");
+
+    // Stop old video track
+    localStream.getVideoTracks().forEach(t => t.stop());
+
+    // Keep the old audio track
+    const audioTrack = localStream.getAudioTracks()[0];
+    localStream = new MediaStream([newVideoTrack, audioTrack]);
+    videoEl.srcObject = localStream;
+
+    // Replace video track in all active peer connections
+    Object.values(peers).forEach(({ peer }) => {
+      const sender = peer._pc
+        ?.getSenders()
+        ?.find(s => s.track && s.track.kind === "video");
+      if (sender) sender.replaceTrack(newVideoTrack);
+    });
+
+    console.log(`✅ Switched to ${facingMode} camera`);
+  } catch (err) {
+    console.error("Error switching camera:", err);
+  }
 }
+
 
 // ============ PREFILL ROOM FROM URL ============
 (function () {
