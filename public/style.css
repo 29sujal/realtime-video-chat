@@ -11,22 +11,22 @@ body {
   font-family: "Inter", system-ui;
   background: var(--bg);
   color: #e6eef8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
   overflow: hidden;
 }
 
 .container {
   width: 100%;
-  height: 100vh;
+  max-width: 1100px;
   position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 header {
   text-align: center;
-  padding: 10px;
-  background: transparent;
-  z-index: 5;
+  margin-bottom: 12px;
 }
 
 .card {
@@ -34,7 +34,6 @@ header {
   padding: 16px;
   border-radius: 12px;
   text-align: center;
-  margin: auto;
 }
 
 .hidden {
@@ -67,50 +66,50 @@ header {
   font-size: 14px;
 }
 
-/* 📱 WhatsApp Call Screen Layout */
-#video-screen {
+/* WhatsApp Style Video Layout */
+.videos-grid {
   position: relative;
   width: 100%;
-  height: 100vh;
-  overflow: hidden;
+  height: calc(100vh - 220px);
   background: black;
-}
-
-#videos {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .video-tile {
-  position: absolute;
+  transition: all 0.4s ease;
+}
+
+.video-tile.remote {
+  position: relative;
   width: 100%;
   height: 100%;
-  transition: all 0.4s ease;
+  z-index: 1;
+}
+
+.video-tile.local {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 30%;
+  height: 25%;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  z-index: 10;
 }
 
 .video-tile video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
-/* 👤 Local preview - small floating bubble */
-.video-tile.local {
-  width: 30%;
-  height: 25%;
-  top: 5%;
-  right: 5%;
-  z-index: 10;
-  border-radius: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-}
-
-/* Label for names */
 .label {
   position: absolute;
   bottom: 8px;
@@ -122,34 +121,30 @@ header {
   border-radius: 6px;
 }
 
-/* 🎛 Bottom Control Bar */
+/* Bottom Control Bar */
 .bottom-bar {
   position: absolute;
   bottom: 25px;
   width: 100%;
   display: flex;
   justify-content: center;
-  gap: 25px;
-  z-index: 20;
-}
-
-.control-btn,
-.end-call {
-  width: 65px;
-  height: 65px;
-  border-radius: 50%;
-  border: none;
-  color: white;
-  font-size: 30px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: transform 0.2s ease;
+  gap: 20px;
+  z-index: 9999;
 }
 
 .control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   background: var(--accent);
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .control-btn:hover {
@@ -158,7 +153,18 @@ header {
 }
 
 .end-call {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   background: var(--end);
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .end-call:hover {
@@ -166,7 +172,17 @@ header {
   background: #d32f2f;
 }
 
-/* Mirror local video */
-#tile-local video {
-  transform: scaleX(-1);
+
+/* Group calls layout */
+.videos-grid.group {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-auto-rows: minmax(200px, 1fr);
 }
+#tile-local video {
+  transform: scaleX(-1); /* mirror off */
+}
+
+
+

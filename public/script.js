@@ -78,42 +78,6 @@ function addVideoTile(id, stream, label = "") {
   videosContainer.appendChild(videoWrapper);
 }
 
-// Swap local and remote video on click
-document.addEventListener("click", e => {
-  const localTile = document.getElementById("tile-local");
-  const remoteTile = document.querySelector(".video-tile.remote");
-
-  if (!localTile || !remoteTile) return;
-
-  if (e.target.closest("#tile-local")) {
-    // Swap streams visually
-    if (localTile.classList.contains("small")) {
-      localTile.classList.remove("small");
-      remoteTile.classList.add("small");
-    } else {
-      localTile.classList.add("small");
-      remoteTile.classList.remove("small");
-    }
-
-    // Swap positions
-    const temp = {
-      top: localTile.style.top,
-      right: localTile.style.right,
-      width: localTile.style.width,
-      height: localTile.style.height,
-    };
-    localTile.style.top = remoteTile.style.top || "0";
-    localTile.style.right = remoteTile.style.right || "0";
-    localTile.style.width = remoteTile.style.width || "100%";
-    localTile.style.height = remoteTile.style.height || "100%";
-    remoteTile.style.top = temp.top || "5%";
-    remoteTile.style.right = temp.right || "5%";
-    remoteTile.style.width = temp.width || "30%";
-    remoteTile.style.height = temp.height || "25%";
-  }
-});
-
-
 function attachStreamToTile(tile, stream) {
   const video = tile.querySelector("video");
   if (video) video.srcObject = stream;
